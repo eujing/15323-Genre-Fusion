@@ -17,6 +17,11 @@ require "prefs"
 require "mididevice"
 require "slider"
 
+val1 = -1
+val2 = -1
+weight1 = 0
+weight2 = 1 - weight1
+
 ///////////////////////////////////
 //Touch osc code
 ///////////////////////////////////
@@ -42,21 +47,29 @@ def install_handlers()
     o2_method_new(full("/2/multitoggle2/4/1"), "f", 'button4', true)
     o2_method_new(full("/2/multitoggle2/3/1"), "f", 'button5', true)
     o2_method_new(full("/2/multitoggle2/2/1"), "f", 'button6', true)
+    o2_method_new(full("/faderM"), "f", 'slider', true)
 
 
+o2_initialize("o2osc", t)
+o2_osc_delegate("oscsend", "192.168.1.122", 8213, false)
+o2_send_start()
+o2_send_finish(0.0, "/oscsend/label hello", false)
 
 def button1(timestamp, address, types, val) 
-    print val
+    val1 = 0
 def button2(timestamp, address, types, val) 
-    print val
+    val1 = 1
 def button3(timestamp, address, types, val) 
-    print val
+    val1 = 2
 def button4(timestamp, address, types, val) 
-    print val
+    val2 = 0
 def button5(timestamp, address, types, val) 
-    print val
+    val2 = 1
 def button6(timestamp, address, types, val) 
-    print val
+    val2 = 2
+def slider(timestamp, address, types, val)
+    weight1 = val
+
 
 
 if len(command_line_arguments) > 1 and
@@ -68,6 +81,7 @@ else
         osc_port = int(command_line_arguments[1])
     # install_generic_handler()
     install_handlers()
+
 
 rslt = o2_osc_port_new(SERVICE, PORT, false)
 if rslt != 0 // an error occurred
