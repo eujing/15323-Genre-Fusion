@@ -1,0 +1,73 @@
+require "debug"
+require "allegro"
+require "readcsv"
+
+class TransitionMatrix:
+    var mat
+
+    def init(optional track = nil):
+        if track != nil:
+            mat = learn(track)
+        else:
+            mat = nil
+
+    def empty():
+        return [[0 for j = 0 to 12] for i = 0 to 12]
+
+    def normalize(in_mat):
+        out_mat = in_mat
+
+        for i = 0 to 12:
+            sum = 0
+            # Sum across a row
+            for j = 0 to 12:
+                sum = sum + out_mat[i][j]
+
+            # Normalize the row
+            for j = 0 to 12:
+                out_mat[i][j] = out_mat[i][j] / sum
+
+        return out_mat
+
+    def learn(track, optional key_pitch = 0):
+        # 2D array of pitches
+        result_mat = empty()
+
+        # Count transitions
+        prev_note = nil
+        for note in track:
+            if isinstance(note, Alg_note):
+                curr_note = (note.key - key_pitch) % 12
+                if prev_note != nil:
+                    result_mat[prev_note][curr_note] = result_mat[prev_note][curr_note] + 1
+                prev_note = curr_note
+
+        return normalize(result_mat)
+
+    def combine(other_tm, optional other_weight = 0.5):
+        new_tm = TransitionMatrix()
+        new_tm.mat = empty()
+
+        w = 1 - other_weight
+        ow = other_weight
+
+        for i = 0 to 12:
+            for j = 0 to 12:
+                new_tm.mat[i][j] = w * mat[i][j] + ow * mat[i][j]
+
+        return new_tm
+
+    def serialize_row(row):
+        joined = flatten([str(x) + "," for x in row])
+        return subseq(joined, 0, len(joined) - 1)
+
+    def write(filename):
+        # Write to CSV, no column names
+        var out_file = open(filename, "w")
+        out_file.writelines([serialize_row(row) + "\n" for row in mat])
+        out_file.flush()
+        out_file.close()
+
+    def read(filename):
+        # Read from CSV, no column names
+        mat = readcsv(filename, false, true)
