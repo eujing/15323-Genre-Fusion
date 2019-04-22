@@ -1,6 +1,7 @@
 require "debug"
 require "allegro"
 require "mfread"
+require "transition_matrix"
 
 def warning(msg)
     print "*** "; msg
@@ -15,17 +16,23 @@ if not seq
 
 # convert seq times to beats
 seq.convert_to_beats()
-# to get seconds: seq.convert_to_seconds()
+# seq.convert_to_seconds()
 
 # print the notes in seq
 def show_note(note)
     print "time: "; note.time; " chan: "; note.chan; 
     print " keyno: "; note.key; " vel: "; note.loud
 
+def track_num_notes(track):
+    return len([note for note in track if isinstance(note, Alg_note)])
 
 for track at tr in seq.tracks
-    print "TRACK", tr
-    for note in track
-        if isinstance(note, Alg_note)
-            show_note(note)
+    if track_num_notes(track) > 0:
+        tm = TransitionMatrix(track)
+        print "TRACK", tr
+        print tm.mat
+        tm.write("track_" + str(tr) + ".csv")
+        new_tm = TransitionMatrix()
+        new_tm.read("track_" + str(tr) + ".csv")
+        print new_tm.mat
 exit()
