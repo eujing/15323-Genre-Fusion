@@ -24,8 +24,9 @@ class TransitionMatrix:
                 sum = sum + out_mat[i][j]
 
             # Normalize the row
-            for j = 0 to 12:
-                out_mat[i][j] = out_mat[i][j] / sum
+            if sum != 0:
+                for j = 0 to 12:
+                    out_mat[i][j] = out_mat[i][j] / sum
 
         return out_mat
 
@@ -70,4 +71,9 @@ class TransitionMatrix:
 
     def read(filename):
         # Read from CSV, no column names
-        mat = readcsv(filename, false, true)
+        temp_mat = readcsv(filename, false, true)
+        mat = empty()
+        for i = 0 to 12:
+            for j = 0 to 12:
+                mat[i][j] = real(temp_mat[i][j])
+

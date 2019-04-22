@@ -17,6 +17,10 @@ require "prefs"
 require "mididevice"
 require "slider"
 
+require "prob"
+require "mfread"
+require "../transition_matrix"
+
 ///////////////////////////////////
 //Touch osc code
 ///////////////////////////////////
@@ -77,6 +81,34 @@ if rslt != 0 // an error occurred
 
 ///////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////
+// Markov Stuff
+///////////////////////////////////////////////////////////////////
+
+# Associated names of transition matrices
+TM_NAMES = ["Game", "Classical", "Rock"]
+
+# Populated with actual transition matrices
+TM_LIST = []
+
+# Loading of precomputed transition matrices
+for type_name in TM_NAMES:
+    var tm_file_path = wxs_file_selector("Open a Transition Matrix for " + type_name,
+                             "", "", ".csv", "*.csv", WXS_FILE_OPEN, 0)
+    var tmp_tm = TransitionMatrix()
+    tmp_tm.read(tm_file_path)
+    TM_LIST.append(tmp_tm)
+
+def get_current_tm():
+    # TODO: Use states updated from TouchOSC
+    # There are one or two styles selected by user in TouchOSC
+    # If one, just return the matrix for that style
+    # If two, use tm1.combine(tm2, CURR_WEIGHT) where CURR_WEIGHT comes from TouchOSC too
+    # Return the value of that
+
+    return TM_LIST[0]
+
+print "Loaded transition matrices!"
 
 // some simple music generation: Here are some problems with this:
 // - not very interesting
@@ -110,25 +142,28 @@ def play_a_measure()
     #   x >= y, we write x + EPSILON > y
     if cur_style == 'rock'
         # play something using the root of the chord (cur_bass)
-        midi_out.note(0, 24 + cur_bass, vel(100), 1)
-        sched_select(vtsched)
-        sched_cause(1, midi_out, 'note', 0, 24 + 7 + cur_bass, vel(100), 1)
-        sched_cause(2, midi_out, 'note', 0, 24 + cur_bass, vel(100), 1)
-        sched_cause(3, midi_out, 'note', 0, 24 + 7 + cur_bass, vel(100), 1)
+        # midi_out.note(0, 24 + cur_bass, vel(100), 1)
+        # sched_select(vtsched)
+        # sched_cause(1, midi_out, 'note', 0, 24 + 7 + cur_bass, vel(100), 1)
+        # sched_cause(2, midi_out, 'note', 0, 24 + cur_bass, vel(100), 1)
+        # sched_cause(3, midi_out, 'note', 0, 24 + 7 + cur_bass, vel(100), 1)
 
         # play notes from the chord
-        for i = 0 to 12
-            if cur_chord[i]
-                midi_out.note(0, 48 + i, vel(100), 0.5)
-        
+        # for i = 0 to 12
+        #     if cur_chord[i]
+        #         midi_out.note(0, 48 + i, vel(100), 0.5)
+
         # pick a random note every 1/16 note (fast). If it's in the
         # scale then play it, otherwise rest. Start on 2nd beat because
         # we play the chord on downbeat and it might be nice to keep
         # chord and "melody" separate so we can hear them clearly in
         # this demo.
-        for i = 0 to 12 // only 3 beats
-            var pitch = 60 + int(random() * 12)
-            if cur_scale[pitch % 12]
+        prev_pitch = cur_bass
+        for i = 0 to 16 // only 3 beats
+            # var pitch = 60 + int(random() * 12)
+            var pitch = 60 + pr_markov_next(prev_pitch % 12, get_current_tm().mat)
+            if cur_scale[pitch % 12]:
                 sched_select(vtsched)
-                sched_cause(1 + i * 0.25, midi_out, 'note',
+                sched_cause(i * 0.25, midi_out, 'note',
                               0, pitch, vel(100), 0.3)
+            prev_pitch = pitch
