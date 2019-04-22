@@ -5,7 +5,7 @@ require "mfread"
 def warning(msg)
     print "*** "; msg
 
-midi_file_path = wxs_file_selector("Open a Standard MIDI File",
+midi_file_path = wxs_file_selector("Open a Standard MIDI File", 
                          "", "", ".mid", "*.mid", WXS_FILE_OPEN, 0)
 print "Opening", midi_file_path
 seq = allegro_smf_read(midi_file_path)
@@ -19,8 +19,9 @@ seq.convert_to_beats()
 
 # print the notes in seq
 def show_note(note)
-    print "time: "; note.time; " chan: "; note.chan;
+    print "time: "; note.time; " chan: "; note.chan; 
     print " keyno: "; note.key; " vel: "; note.loud
+
 
 for track at tr in seq.tracks
     print "TRACK", tr
