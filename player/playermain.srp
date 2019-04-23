@@ -155,14 +155,6 @@ def pick_starting_pitch(cur_chord):
             pitches.append(pitch)
     return pr_choice(pitches)
 
-// some simple music generation: Here are some problems with this:
-// - not very interesting
-// - no manual control of anything
-// - does everything: bass, chord, melody, instead of one thing
-// - all piano sounds
-// - cannot handle cur_beats_per_measure properly (assumes 4)
-// - plays absurdly fast at faster tempos
-//
 def play_a_measure()
     # compute a measure using these variables:
     #    cur_style - a symbol representing style to play (if
