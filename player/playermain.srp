@@ -54,10 +54,10 @@ def install_handlers()
     o2_method_new(full("/faderM"), "f", 'slider', true)
 
 
-o2_initialize("o2osc", t)
-o2_osc_delegate("oscsend", "192.168.1.122", 8213, false)
-o2_send_start()
-o2_send_finish(0.0, "/oscsend/label hello", false)
+# o2_initialize("o2osc", t)
+# o2_osc_delegate("oscsend", "192.168.1.122", 8213, false)
+# o2_send_start()
+# o2_send_finish(0.0, "/oscsend/label hello", false)
 
 def button1(timestamp, address, types, val) 
     val1 = 0
@@ -116,13 +116,20 @@ for type_name in TM_NAMES:
 print "Loaded transition matrices!"
 
 def get_current_tm():
+    if (val1 == -1 and val2 == -1)
+        return nil
     # TODO: Use states updated from TouchOSC
     # There are one or two styles selected by user in TouchOSC
     # If one, just return the matrix for that style
+    if (val1 != -1 and val2 == -1)
+        return TM_LIST[val1]
+    elif (val1 == -1 and val2 != -1)
+        return TM_LIST[val2]
     # If two, use tm1.combine(tm2, CURR_WEIGHT) where CURR_WEIGHT comes from TouchOSC too
+    else
+        return tm1.combine(tm2, weight1)
     # Return the value of that
-
-    return TM_LIST[0]
+    # return TM_LIST[0]
 
 def get_next_state(tm, state):
     var curr_idx = tm.state_to_idx(state)
