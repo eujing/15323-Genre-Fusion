@@ -23,8 +23,10 @@ require "../transition_matrix"
 
 val1 = -1
 val2 = -1
-weight1 = 0
+weight1 = 0.5 # float ranging from 0 to 1. gray slider in the bottom middle.
 weight2 = 1 - weight1
+octaveshift = 4 # this is an int ranging from 0 to 9 determined by the touchosc slider. Left slider in the middle 4
+
 
 ///////////////////////////////////
 //Touch osc code
@@ -51,7 +53,8 @@ def install_handlers()
     o2_method_new(full("/2/multitoggle2/4/1"), "f", 'button4', true)
     o2_method_new(full("/2/multitoggle2/3/1"), "f", 'button5', true)
     o2_method_new(full("/2/multitoggle2/2/1"), "f", 'button6', true)
-    o2_method_new(full("/faderM"), "f", 'slider', true)
+    o2_method_new(full("/faderM"), "f", 'weightslider', true)
+    o2_method_new(full("/multifaderM/1"), "f", 'octaveslider', true)
 
 
 # o2_initialize("o2osc", t)
@@ -61,18 +64,28 @@ def install_handlers()
 
 def button1(timestamp, address, types, val) 
     val1 = 0
+    print val1
 def button2(timestamp, address, types, val) 
     val1 = 1
+    print val1
 def button3(timestamp, address, types, val) 
     val1 = 2
+    print val1
 def button4(timestamp, address, types, val) 
     val2 = 0
+    print val2
 def button5(timestamp, address, types, val) 
     val2 = 1
+    print val2
 def button6(timestamp, address, types, val) 
     val2 = 2
-def slider(timestamp, address, types, val)
+    print val2
+def weightslider(timestamp, address, types, val)
     weight1 = val
+    print weight1
+def octaveslider(timestamp, address, types, val)
+    octaveshift = int(val*9)
+    print octave
 
 
 
@@ -83,7 +96,6 @@ else
     if len(command_line_arguments) > 1 and
        isdigit(command_line_arguments[1])
         osc_port = int(command_line_arguments[1])
-    # install_generic_handler()
     install_handlers()
 
 
