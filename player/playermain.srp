@@ -128,8 +128,9 @@ for type_name in TM_NAMES:
 print "Loaded transition matrices!"
 
 def get_current_tm():
+    # NOTE: Return the first matrix by default
     if (val1 == -1 and val2 == -1)
-        return nil
+        return TM_LIST[0]
     # TODO: Use states updated from TouchOSC
     # There are one or two styles selected by user in TouchOSC
     # If one, just return the matrix for that style
@@ -141,7 +142,9 @@ def get_current_tm():
     else
         return tm1.combine(tm2, weight1)
     # Return the value of that
-    # return TM_LIST[0]
+
+def get_current_octave():
+    return octaveshift
 
 def get_next_state(tm, state):
     var curr_idx = tm.state_to_idx(state)
@@ -196,11 +199,12 @@ def play_a_measure()
         var i = 0
         var prev_pitch = nil
         var prev_dur = nil
+        var octave = 12 * get_current_octave()
         sched_select(vtsched)
         for pitch = 0 to 12:
             if cur_chord[pitch]:
                 sched_cause(i * 0.25, midi_out, 'note',
-                            0, 60 + pitch, vel(100), 0.3)
+                            0, octave + pitch, vel(100), 0.3)
                 i = i + 1
                 prev_pitch = pitch
 
@@ -209,7 +213,7 @@ def play_a_measure()
         prev_dur = 0.25
         total_beats = total_beats + i * 0.25
 
-        tm = get_current_tm()
+        var tm = get_current_tm()
         while total_beats < 4:
             var next_state = get_next_state(tm, [prev_pitch, prev_dur])
             var next_pitch = next_state[0]
@@ -218,7 +222,7 @@ def play_a_measure()
             sched_select(vtsched)
             if cur_scale[next_pitch]:
                 sched_cause(total_beats, midi_out, 'note',
-                            0, next_pitch + 60, vel(100), next_dur)
+                            0, next_pitch + octave, vel(100), next_dur)
                 total_beats = total_beats + next_dur
             prev_pitch = next_pitch
             prev_dur = next_dur
