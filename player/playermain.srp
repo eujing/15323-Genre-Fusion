@@ -113,6 +113,8 @@ for type_name in TM_NAMES:
     tmp_tm.read(tm_file_path)
     TM_LIST.append(tmp_tm)
 
+print "Loaded transition matrices!"
+
 def get_current_tm():
     # TODO: Use states updated from TouchOSC
     # There are one or two styles selected by user in TouchOSC
@@ -122,7 +124,29 @@ def get_current_tm():
 
     return TM_LIST[0]
 
-print "Loaded transition matrices!"
+def get_next_state(tm, state):
+    var curr_idx = tm.state_to_idx(state)
+    var mat = tm.mat
+    var next_idx = pr_markov_next(curr_idx, mat)
+    var next_state = tm.idx_to_state(next_idx)
+    return next_state
+
+def pick_starting_dur(tm, pitch):
+    durs = []
+
+    for dur in tm.durs:
+        var idx = tm.state_to_idx([pitch, dur])
+        if sum_row(tm.mat[idx]) >= 1.0:
+            durs.append(dur)
+
+    return pr_choice(durs)
+
+def pick_starting_pitch(cur_chord):
+    pitches = []
+    for pitch = 0 to 12:
+        if cur_chord[pitch]:
+            pitches.append(pitch)
+    return pr_choice(pitches)
 
 // some simple music generation: Here are some problems with this:
 // - not very interesting
@@ -155,29 +179,35 @@ def play_a_measure()
     #   reliable without very difficult analysis. So, instead of
     #   x >= y, we write x + EPSILON > y
     if cur_style == 'rock'
-        # play something using the root of the chord (cur_bass)
-        # midi_out.note(0, 24 + cur_bass, vel(100), 1)
-        # sched_select(vtsched)
-        # sched_cause(1, midi_out, 'note', 0, 24 + 7 + cur_bass, vel(100), 1)
-        # sched_cause(2, midi_out, 'note', 0, 24 + cur_bass, vel(100), 1)
-        # sched_cause(3, midi_out, 'note', 0, 24 + 7 + cur_bass, vel(100), 1)
 
-        # play notes from the chord
-        # for i = 0 to 12
-        #     if cur_chord[i]
-        #         midi_out.note(0, 48 + i, vel(100), 0.5)
-
-        # pick a random note every 1/16 note (fast). If it's in the
-        # scale then play it, otherwise rest. Start on 2nd beat because
-        # we play the chord on downbeat and it might be nice to keep
-        # chord and "melody" separate so we can hear them clearly in
-        # this demo.
-        prev_pitch = cur_bass
-        for i = 0 to 16 // only 3 beats
-            # var pitch = 60 + int(random() * 12)
-            var pitch = 60 + pr_markov_next(prev_pitch % 12, get_current_tm().mat)
-            if cur_scale[pitch % 12]:
-                sched_select(vtsched)
+        # Play an arpegio with the current chord
+        var total_beats = 0
+        var i = 0
+        var prev_pitch = nil
+        var prev_dur = nil
+        sched_select(vtsched)
+        for pitch = 0 to 12:
+            if cur_chord[pitch]:
                 sched_cause(i * 0.25, midi_out, 'note',
-                              0, pitch, vel(100), 0.3)
-            prev_pitch = pitch
+                            0, 60 + pitch, vel(100), 0.3)
+                i = i + 1
+                prev_pitch = pitch
+
+        # Continue the rest of the measure with the Markov chain, only
+        # playing notes within the scale
+        prev_dur = 0.25
+        total_beats = total_beats + i * 0.25
+
+        tm = get_current_tm()
+        while total_beats < 4:
+            var next_state = get_next_state(tm, [prev_pitch, prev_dur])
+            var next_pitch = next_state[0]
+            var next_dur = next_state[1]
+
+            sched_select(vtsched)
+            if cur_scale[next_pitch]:
+                sched_cause(total_beats, midi_out, 'note',
+                            0, next_pitch + 60, vel(100), next_dur)
+                total_beats = total_beats + next_dur
+            prev_pitch = next_pitch
+            prev_dur = next_dur

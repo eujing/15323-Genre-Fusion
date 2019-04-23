@@ -41,9 +41,15 @@ def main():
 
     tm = TransitionMatrix(seq.tracks[target_tr])
     print "TRACK", target_tr
-    print tm.mat
+    print tm.durs
+    # print tm.mat
     print "Wrote to " + output + ".csv"
     tm.write(output + ".csv")
+    tm2 = TransitionMatrix()
+    tm2.read(output + ".csv")
+    print tm2.durs
+    print "Done!"
+    # print tm2.mat
     exit()
 
 main()
