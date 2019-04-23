@@ -63,22 +63,40 @@ def install_handlers()
 # o2_send_finish(0.0, "/oscsend/label hello", false)
 
 def button1(timestamp, address, types, val) 
-    val1 = 0
+    if val == 1:
+        val1 = 0
+    else:
+        val1 = -1
     print val1
 def button2(timestamp, address, types, val) 
-    val1 = 1
+    if val == 1:
+        val1 = 1
+    else:
+        val1 = -1
     print val1
 def button3(timestamp, address, types, val) 
-    val1 = 2
+    if val == 1:
+        val1 = 2
+    else:
+        val1 = -1
     print val1
 def button4(timestamp, address, types, val) 
-    val2 = 0
+    if val == 1:
+        val2 = 0
+    else:
+        val2 = -1
     print val2
 def button5(timestamp, address, types, val) 
-    val2 = 1
+    if val == 1:
+        val2 = 1
+    else:
+        val2 = -1
     print val2
 def button6(timestamp, address, types, val) 
-    val2 = 2
+    if val == 1:
+        val2 = 2
+    else:
+        val2 = -1
     print val2
 def weightslider(timestamp, address, types, val)
     weight1 = val
@@ -135,8 +153,10 @@ def get_current_tm():
     # There are one or two styles selected by user in TouchOSC
     # If one, just return the matrix for that style
     if (val1 != -1 and val2 == -1)
+        print "Only using ", TM_NAMES[val1]
         return TM_LIST[val1]
     elif (val1 == -1 and val2 != -1)
+        print "Only using ", TM_NAMES[val2]
         return TM_LIST[val2]
     # If two, use tm1.combine(tm2, CURR_WEIGHT) where CURR_WEIGHT comes from TouchOSC too
     else
