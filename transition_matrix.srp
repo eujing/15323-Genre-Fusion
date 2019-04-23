@@ -161,7 +161,13 @@ class TransitionMatrix:
                         else:
                             new_tm.mat[ntm_from][ntm_to] = 0
 
+        # print "Before normalize:"
+        # for row in new_tm.mat
+        #     print sum_row(row)
         new_tm.mat = new_tm.normalize(new_tm.mat)
+        # print "After normalize:"
+        # for row in new_tm.mat
+        #     print sum_row(row)
 
         return new_tm
 

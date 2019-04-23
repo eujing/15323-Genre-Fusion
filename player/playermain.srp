@@ -85,7 +85,7 @@ def weightslider(timestamp, address, types, val)
     print weight1
 def octaveslider(timestamp, address, types, val)
     octaveshift = int(val*9)
-    print octave
+    print octaveshift
 
 
 
@@ -140,8 +140,10 @@ def get_current_tm():
         return TM_LIST[val2]
     # If two, use tm1.combine(tm2, CURR_WEIGHT) where CURR_WEIGHT comes from TouchOSC too
     else
+        var tm1 = TM_LIST[val1]
+        var tm2 = TM_LIST[val2]
+        print "Mixing", TM_NAMES[val1], "and", TM_NAMES[val2], "with weight", weight1
         return tm1.combine(tm2, weight1)
-    # Return the value of that
 
 def get_current_octave():
     return octaveshift
@@ -214,15 +216,29 @@ def play_a_measure()
         total_beats = total_beats + i * 0.25
 
         var tm = get_current_tm()
-        while total_beats < 4:
+        var max_tries = 10
+        var tries = 0
+        while total_beats < 4 and tries < max_tries:
             var next_state = get_next_state(tm, [prev_pitch, prev_dur])
             var next_pitch = next_state[0]
             var next_dur = next_state[1]
 
             sched_select(vtsched)
-            if cur_scale[next_pitch]:
+            display next_pitch, next_dur
+            # TODO: Find out why this happens
+            if prev_pitch == 0 and prev_dur == 0 and
+               next_pitch == 0 and next_pitch == 0:
+                print "Stuck in inf sequence of 0 duration notes, break"
+                tries = max_tries
+
+            elif cur_scale[next_pitch]:
                 sched_cause(total_beats, midi_out, 'note',
                             0, next_pitch + octave, vel(100), next_dur)
                 total_beats = total_beats + next_dur
+                tries = 0
+            else:
+                tries = tries + 1
             prev_pitch = next_pitch
             prev_dur = next_dur
+        if tries >= max_tries:
+            print "Exceeded max_tries, cannot find notes to play"
