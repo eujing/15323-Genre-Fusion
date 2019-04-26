@@ -26,7 +26,7 @@ val2 = -1
 weight1 = 0.5 # float ranging from 0 to 1. gray slider in the bottom middle.
 weight2 = 1 - weight1
 octaveshift = 4 # this is an int ranging from 0 to 9 determined by the touchosc slider. Left slider in the middle 4
-
+instrument = 0
 
 ///////////////////////////////////
 //Touch osc code
@@ -48,7 +48,9 @@ def install_handlers()
     o2_method_new(full("/2/multitoggle2/2/1"), "f", 'button6', true)
     o2_method_new(full("/faderM"), "f", 'weightslider', true)
     o2_method_new(full("/multifaderM/1"), "f", 'octaveslider', true)
-
+    o2_method_new(full("/2/multitoggle3/4/1"), "f", 'button7', true)
+    o2_method_new(full("/2/multitoggle3/3/1"), "f", 'button8', true)
+    o2_method_new(full("/2/multitoggle3/2/1"), "f", 'button9', true)
 
 # o2_initialize("o2osc", t)
 # o2_osc_delegate("oscsend", "192.168.1.122", 8213, false)
@@ -97,6 +99,12 @@ def weightslider(timestamp, address, types, val)
 def octaveslider(timestamp, address, types, val)
     octaveshift = int(val*9)
     print octaveshift
+def button7(timestamp, address, types, val) # piano
+	instrument = 0
+def button8(timestamp, address, types, val) # bass
+	instrument = 32
+def button9(timestamp, address, types, val) # drums
+	instrument = 116
 
 install_handlers()
 rslt = o2_osc_port_new(SERVICE, PORT, false)
@@ -228,6 +236,9 @@ def play_a_measure()
         prev_dur = pick_starting_dur(tm, prev_pitch)
         var to_be_played = []
 
+        sched_cause(0, midi_out, 'program',
+                    0, instrument)
+
         while total_beats < cur_beats_per_measure and tries < max_tries:
             var next_state = get_next_state(tm, [prev_pitch, prev_dur])
             var next_pitch = next_state[0]
@@ -241,6 +252,7 @@ def play_a_measure()
                 tries = max_tries
 
             elif cur_scale[next_pitch]:
+                
                 sched_cause(total_beats, midi_out, 'note',
                             0, next_pitch + octave, vel(100), next_dur)
                 total_beats = total_beats + next_dur
