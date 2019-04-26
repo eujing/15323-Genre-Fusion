@@ -4,7 +4,7 @@
 # March 2017
 
 # IMPORTANT: SERVICE must be defined before you load playerbase.srp:
-SERVICE = "demo"
+SERVICE = "eujingc_jackyl1"
 
 # Now load playerbase.srp
 require "playerbase"
@@ -32,19 +32,12 @@ instrument = 0
 //Touch osc code
 ///////////////////////////////////
 
-APPLICATION = "p5"
-SERVICE = "p5"
 PORT = 8213
 
 # make a full path with SERVICE prefix
 def full(osc_path)
     # make a full O2 path based on SERVICE
     return "/" + SERVICE + osc_path
-
-o2_initialize(APPLICATION, false)
-o2_service_new(SERVICE)
-o2_clock_set()
-
 
 def install_handlers()
     o2_method_new(full("/2/multitoggle1/4/1"), "f", 'button1', true)
@@ -113,28 +106,18 @@ def button8(timestamp, address, types, val) # bass
 def button9(timestamp, address, types, val) # drums
 	instrument = 116
 
-
-if len(command_line_arguments) > 1 and
-   command_line_arguments[1] == "d" // set up for donttouchosc
-    install_donttouchosc_handlers()
-else
-    if len(command_line_arguments) > 1 and
-       isdigit(command_line_arguments[1])
-        osc_port = int(command_line_arguments[1])
-    install_handlers()
-
-
+install_handlers()
 rslt = o2_osc_port_new(SERVICE, PORT, false)
 if rslt != 0 // an error occurred
     display "in int.srp, o2_osc_port_new returned ERROR", rslt
-
-
 
 ///////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////
 // Markov Stuff
 ///////////////////////////////////////////////////////////////////
+
+TM_FILES = ["tetris.csv", "usanthem.csv", "anotherlovesong.csv"]
 
 # Associated names of transition matrices
 TM_NAMES = ["Game", "Classical", "Rock"]
@@ -143,9 +126,10 @@ TM_NAMES = ["Game", "Classical", "Rock"]
 TM_LIST = []
 
 # Loading of precomputed transition matrices
-for type_name in TM_NAMES:
-    var tm_file_path = wxs_file_selector("Open a Transition Matrix for " + type_name,
-                             "", "", ".csv", "*.csv", WXS_FILE_OPEN, 0)
+for i = 0 to len(TM_NAMES):
+    # var tm_file_path = wxs_file_selector("Open a Transition Matrix for " + type_name,
+    #                          "", "", ".csv", "*.csv", WXS_FILE_OPEN, 0)
+    var tm_file_path = TM_FILES[i]
     var tmp_tm = TransitionMatrix()
     tmp_tm.read(tm_file_path)
     TM_LIST.append(tmp_tm)
