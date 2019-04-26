@@ -168,12 +168,14 @@ def pick_starting_dur(tm, pitch):
 
     return pr_choice(durs)
 
-def pick_starting_pitch(cur_chord):
+def pick_starting_pitch(tm, cur_scale):
     pitches = []
     for pitch = 0 to 12:
-        if cur_chord[pitch]:
+        if cur_scale[pitch] and tm.pitch_can_transition(pitch):
             pitches.append(pitch)
     return pr_choice(pitches)
+
+PITCH_MAP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
 def play_a_measure()
     # compute a measure using these variables:
@@ -199,36 +201,40 @@ def play_a_measure()
     #   x >= y, we write x + EPSILON > y
     if cur_style == 'rock'
 
-        # Play an arpegio with the current chord
         var total_beats = 0
-        var i = 0
         var prev_pitch = nil
         var prev_dur = nil
         var octave = 12 * get_current_octave()
-        sched_select(vtsched)
-        for pitch = 0 to 12:
-            if cur_chord[pitch]:
-                sched_cause(i * 0.25, midi_out, 'note',
-                            0, octave + pitch, vel(100), 0.3)
-                i = i + 1
-                prev_pitch = pitch
+        var max_tries = 100
+        var tries = 0
+
+        # Play an arpegio with the current chord
+        # sched_select(vtsched)
+        # var i = 0
+        # for pitch = 0 to 12:
+        #     if cur_chord[pitch]:
+        #         sched_cause(i * 0.25, midi_out, 'note',
+        #                     0, octave + pitch, vel(100), 0.3)
+        #         i = i + 1
+        #         prev_pitch = pitch
+        # total_beats = total_beats + i * 0.25
 
         # Continue the rest of the measure with the Markov chain, only
         # playing notes within the scale
-        prev_dur = 0.25
-        total_beats = total_beats + i * 0.25
+        # prev_dur = 0.25
 
         var tm = get_current_tm()
-        var max_tries = 10
-        var tries = 0
-        while total_beats < 4 and tries < max_tries:
+        prev_pitch = pick_starting_pitch(tm, cur_scale)
+        prev_dur = pick_starting_dur(tm, prev_pitch)
+        var to_be_played = []
+
+        while total_beats < cur_beats_per_measure and tries < max_tries:
             var next_state = get_next_state(tm, [prev_pitch, prev_dur])
             var next_pitch = next_state[0]
             var next_dur = next_state[1]
 
             sched_select(vtsched)
-            display next_pitch, next_dur
-            # TODO: Find out why this happens
+            # TODO: Find out why this happens, I think it does not happen anymore
             if prev_pitch == 0 and prev_dur == 0 and
                next_pitch == 0 and next_pitch == 0:
                 print "Stuck in inf sequence of 0 duration notes, break"
@@ -239,9 +245,13 @@ def play_a_measure()
                             0, next_pitch + octave, vel(100), next_dur)
                 total_beats = total_beats + next_dur
                 tries = 0
+                to_be_played.append([PITCH_MAP[next_pitch], next_dur])
             else:
                 tries = tries + 1
             prev_pitch = next_pitch
             prev_dur = next_dur
+
+        print "Playing:", to_be_played
+
         if tries >= max_tries:
             print "Exceeded max_tries, cannot find notes to play"

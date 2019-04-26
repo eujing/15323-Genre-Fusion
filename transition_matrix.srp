@@ -70,9 +70,10 @@ class TransitionMatrix:
         for note in track:
             if isinstance(note, Alg_note):
                 d = process_dur(note.dur, round_durs)
-                if not dur_counts.has_key(d):
-                    dur_counts[d] = 0
-                dur_counts[d] = dur_counts[d] + 1
+                if d > 1:
+                    if not dur_counts.has_key(d):
+                        dur_counts[d] = 0
+                    dur_counts[d] = dur_counts[d] + 1
         return dur_counts
 
     def state_to_idx(state):
@@ -81,12 +82,21 @@ class TransitionMatrix:
 
         var i = pitch
         var j = durs.index(dur)
+        if j == -1:
+            print "WARNING: Invalid duration in state_to_idx", dur, durs
+            return -1
         return i * len(durs) + j
 
     def idx_to_state(idx):
         var pitch = int(idx / len(durs))
         var dur = durs[idx % len(durs)]
         return [pitch, dur]
+
+    def pitch_can_transition(pitch):
+        for dur in durs:
+            if sum_row(mat[state_to_idx([pitch, dur])]) > 0:
+                return true
+        return false
 
     def learn(track, optional key_pitch = 0):
         var dur_freqs = dur_frequencies(track, true)
@@ -104,11 +114,12 @@ class TransitionMatrix:
                 var curr_dur = process_dur(note.dur, true)
                 var curr_state = [curr_note, curr_dur]
 
-                if prev_state != nil:
-                    var prev_idx = state_to_idx(prev_state)
-                    var curr_idx = state_to_idx(curr_state)
-                    result_mat[prev_idx][curr_idx] = result_mat[prev_idx][curr_idx] + 1
-                prev_state = curr_state
+                if curr_dur > 0:
+                    if prev_state != nil:
+                        var prev_idx = state_to_idx(prev_state)
+                        var curr_idx = state_to_idx(curr_state)
+                        result_mat[prev_idx][curr_idx] = result_mat[prev_idx][curr_idx] + 1
+                    prev_state = curr_state
 
         return normalize(result_mat)
 
@@ -139,10 +150,12 @@ class TransitionMatrix:
                         # Individual table indexes as each matrix has different mappings
                         var ntm_from = new_tm.state_to_idx(prev_state)
                         var ntm_to = new_tm.state_to_idx(next_state)
-                        var tm_from = state_to_idx(prev_state)
-                        var tm_to = state_to_idx(next_state)
-                        var otm_from = other_tm.state_to_idx(prev_state)
-                        var otm_to = other_tm.state_to_idx(next_state)
+                        if in_curr:
+                            var tm_from = state_to_idx(prev_state)
+                            var tm_to = state_to_idx(next_state)
+                        if in_other:
+                            var otm_from = other_tm.state_to_idx(prev_state)
+                            var otm_to = other_tm.state_to_idx(next_state)
 
                         # Both matrices support this transition
                         if in_curr and in_other:
