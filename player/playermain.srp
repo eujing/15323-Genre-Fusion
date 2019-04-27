@@ -98,6 +98,8 @@ def button6(timestamp, address, types, val)
         val2 = -1
     print val2
 def weightslider(timestamp, address, types, val)
+    if(val < 0.01) val = 0.01
+    if(val > 0.99) val = 0.99
     weight1 = val
     print "Mixing weight:", weight1
 
