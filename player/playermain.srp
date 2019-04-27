@@ -99,12 +99,12 @@ def weightslider(timestamp, address, types, val)
 def octaveslider(timestamp, address, types, val)
     octaveshift = int(val*9)
     print octaveshift
-def button7(timestamp, address, types, val) # piano
-	instrument = 0
-def button8(timestamp, address, types, val) # bass
-	instrument = 32
-def button9(timestamp, address, types, val) # drums
-	instrument = 116
+def button7(timestamp, address, types, val) # Electric piano 1
+	instrument = 4
+def button8(timestamp, address, types, val) # Voice Oohs
+	instrument = 53
+def button9(timestamp, address, types, val) # blow bottle
+	instrument = 76
 
 install_handlers()
 rslt = o2_osc_port_new(SERVICE, PORT, false)
