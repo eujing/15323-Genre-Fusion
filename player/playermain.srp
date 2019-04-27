@@ -26,7 +26,9 @@ val2 = -1
 weight1 = 0.5 # float ranging from 0 to 1. gray slider in the bottom middle.
 weight2 = 1 - weight1
 octaveshift = 4 # this is an int ranging from 0 to 9 determined by the touchosc slider. Left slider in the middle 4
-instrument = 0
+drag_factor = 1.5
+vol_sd = 15
+instrument = 4
 
 ///////////////////////////////////
 //Touch osc code
@@ -48,6 +50,8 @@ def install_handlers()
     o2_method_new(full("/2/multitoggle2/2/1"), "f", 'button6', true)
     o2_method_new(full("/faderM"), "f", 'weightslider', true)
     o2_method_new(full("/multifaderM/1"), "f", 'octaveslider', true)
+    o2_method_new(full("/multifaderM/2"), "f", 'dragslider', true)
+    o2_method_new(full("/multifaderM/3"), "f", 'sdslider', true)
     o2_method_new(full("/2/multitoggle3/4/1"), "f", 'button7', true)
     o2_method_new(full("/2/multitoggle3/3/1"), "f", 'button8', true)
     o2_method_new(full("/2/multitoggle3/2/1"), "f", 'button9', true)
@@ -95,16 +99,26 @@ def button6(timestamp, address, types, val)
     print val2
 def weightslider(timestamp, address, types, val)
     weight1 = val
-    print weight1
+    print "Mixing weight:", weight1
+
 def octaveslider(timestamp, address, types, val)
     octaveshift = int(val*9)
-    print octaveshift
+    print "Octave shift:", octaveshift
+
+def dragslider(timestamp, address, types, val)
+    drag_factor = 1.0 + val
+    print "Drag factor:", drag_factor
+
+def sdslider(timestamp, address, types, val)
+    vol_sd = 30 * val
+    print "Vol std. dev.:", vol_sd
+
 def button7(timestamp, address, types, val) # Electric piano 1
-	instrument = 4
+    instrument = 4
 def button8(timestamp, address, types, val) # Voice Oohs
-	instrument = 53
+    instrument = 53
 def button9(timestamp, address, types, val) # blow bottle
-	instrument = 76
+    instrument = 76
 
 install_handlers()
 rslt = o2_osc_port_new(SERVICE, PORT, false)
@@ -158,6 +172,9 @@ def get_current_tm():
 
 def get_current_octave():
     return octaveshift
+
+def get_current_drag_factor():
+    return drag_factor
 
 def get_next_state(tm, state):
     var curr_idx = tm.state_to_idx(state)
@@ -215,6 +232,7 @@ def play_a_measure()
         var octave = 12 * get_current_octave()
         var max_tries = 100
         var tries = 0
+        var eps = 0.0001
 
         # Play an arpegio with the current chord
         # sched_select(vtsched)
@@ -252,12 +270,19 @@ def play_a_measure()
                 tries = max_tries
 
             elif cur_scale[next_pitch]:
-                
+                # Have notes drag out slighly more so be more natural
+                var actual_dur = next_dur * get_current_drag_factor()
+
+                # Make sure the first note is always at velocity 100
+                var actual_vol = 100
+                # Notes not on a downbeat
+                if total_beats - int(total_beats) > eps:
+                    actual_vol = int(pr_normal(100, vol_sd))
                 sched_cause(total_beats, midi_out, 'note',
-                            0, next_pitch + octave, vel(100), next_dur)
+                            0, next_pitch + octave, vel(actual_vol), actual_dur)
                 total_beats = total_beats + next_dur
                 tries = 0
-                to_be_played.append([PITCH_MAP[next_pitch], next_dur])
+                to_be_played.append([PITCH_MAP[next_pitch], next_dur, actual_vol])
             else:
                 tries = tries + 1
             prev_pitch = next_pitch
