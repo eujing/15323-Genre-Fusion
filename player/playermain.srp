@@ -4,7 +4,7 @@
 # March 2017
 
 # IMPORTANT: SERVICE must be defined before you load playerbase.srp:
-SERVICE = "eujingc_jackyl1"
+SERVICE = "doo_dogs"
 
 # Now load playerbase.srp
 require "playerbase"
@@ -21,14 +21,14 @@ require "prob"
 require "mfread"
 require "../transition_matrix"
 
-val1 = -1
+val1 = -1 # val1 and val2 are used to determine which songs to mix into the matrix, ranging from 0 to 2.
 val2 = -1
 weight1 = 0.5 # float ranging from 0 to 1. gray slider in the bottom middle.
 weight2 = 1 - weight1
 octaveshift = 4 # this is an int ranging from 0 to 9 determined by the touchosc slider. Left slider in the middle 4
 drag_factor = 1.5
-vol_sd = 15
-instrument = 4
+vol_sd = 15 # for selecting volume
+instrument = 4 # for selecting instrument
 
 ///////////////////////////////////
 //Touch osc code
@@ -56,11 +56,7 @@ def install_handlers()
     o2_method_new(full("/2/multitoggle3/3/1"), "f", 'button8', true)
     o2_method_new(full("/2/multitoggle3/2/1"), "f", 'button9', true)
 
-# o2_initialize("o2osc", t)
-# o2_osc_delegate("oscsend", "192.168.1.122", 8213, false)
-# o2_send_start()
-# o2_send_finish(0.0, "/oscsend/label hello", false)
-
+#buttons 1-6 are used for selecting which songs to mix into markov.
 def button1(timestamp, address, types, val) 
     if val == 1:
         val1 = 0
@@ -97,9 +93,13 @@ def button6(timestamp, address, types, val)
     else:
         val2 = -1
     print val2
+
 def weightslider(timestamp, address, types, val)
-    if(val < 0.01) val = 0.01
-    if(val > 0.99) val = 0.99
+    if(val < 0.01) 
+        val = 0.01
+    if(val > 0.99)
+        val = 0.99
+
     weight1 = val
     print "Mixing weight:", weight1
 
@@ -127,7 +127,6 @@ rslt = o2_osc_port_new(SERVICE, PORT, false)
 if rslt != 0 // an error occurred
     display "in int.srp, o2_osc_port_new returned ERROR", rslt
 
-///////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////
 // Markov Stuff
@@ -156,7 +155,6 @@ def get_current_tm():
     # NOTE: Return the first matrix by default
     if (val1 == -1 and val2 == -1)
         return TM_LIST[0]
-    # TODO: Use states updated from TouchOSC
     # There are one or two styles selected by user in TouchOSC
     # If one, just return the matrix for that style
     if (val1 != -1 and val2 == -1)
@@ -235,17 +233,6 @@ def play_a_measure()
         var max_tries = 100
         var tries = 0
         var eps = 0.0001
-
-        # Play an arpegio with the current chord
-        # sched_select(vtsched)
-        # var i = 0
-        # for pitch = 0 to 12:
-        #     if cur_chord[pitch]:
-        #         sched_cause(i * 0.25, midi_out, 'note',
-        #                     0, octave + pitch, vel(100), 0.3)
-        #         i = i + 1
-        #         prev_pitch = pitch
-        # total_beats = total_beats + i * 0.25
 
         # Continue the rest of the measure with the Markov chain, only
         # playing notes within the scale
