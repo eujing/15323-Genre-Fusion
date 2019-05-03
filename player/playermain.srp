@@ -1,7 +1,12 @@
-# playerdemo.srp - example of a bare-bones player
-#
-# Roger B. Dannenberg
-# March 2017
+# playermain.srp
+
+# DESIGN:
+# This is the main base of the code that handles the playing.
+# It takes in 3 songs of different genres as .mid files (hardcoded) and mixes them to generate Markov matrices.
+# All of the manual control is handled here as well with touchOSC. 
+# The actual playing code is mostly done in the play_a_measure function.
+# This code is based off of RBD's playerdemo.srp.
+
 
 # IMPORTANT: SERVICE must be defined before you load playerbase.srp:
 SERVICE = "doo_dogs"
@@ -95,7 +100,7 @@ def button6(timestamp, address, types, val)
     print val2
 
 def weightslider(timestamp, address, types, val)
-    if(val < 0.01) 
+    if(val < 0.01) # used to fix the issue of breaking at 0 and 1. 
         val = 0.01
     if(val > 0.99)
         val = 0.99
