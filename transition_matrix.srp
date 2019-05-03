@@ -3,12 +3,14 @@ require "allegro"
 require "readcsv"
 require "strparse"
 
+# Finds the sum of numbers in an array, or row in a matrix
 def sum_row(arr):
     var sum = 0
     for val in arr:
         sum = sum + val
     return sum
 
+# Log base 2
 def log2(x):
     log(real(x)) / log(real(2))
 
@@ -18,6 +20,7 @@ def round_nearest_pow_2(x):
 def num_increasing(x, y):
     x > y
 
+# Returns the union of two lists of numbers, sorted in increasing order
 def union(x, y):
     var result = x.copy()
     for elem in y:
@@ -36,9 +39,11 @@ class TransitionMatrix:
             mat = nil
             durs = nil
 
+    # Returns an empty length x length matrix filled with zeroes
     def empty(length):
         return [[0 for j = 0 to length] for i = 0 to length]
 
+    # Normalizes each row of the matrix to sum to 1.0 (probabilities)
     def normalize(in_mat):
         var out_mat = in_mat.copy()
         var n_states = 12 * len(durs)
@@ -53,6 +58,7 @@ class TransitionMatrix:
 
         return out_mat
 
+    # Processes raw note durations from MIDI
     def process_dur(dur, optional round_dur = false):
         var d = dur
         # NOTE: Ignore all the rests, we just want the fractional intervals
@@ -65,6 +71,7 @@ class TransitionMatrix:
             d = 0
         return d
 
+    # Returns a dictionary representing the frequency counts of each duration
     def dur_frequencies(track, optional round_durs = false):
         var dur_counts = {}
         for note in track:
@@ -76,6 +83,7 @@ class TransitionMatrix:
                     dur_counts[d] = dur_counts[d] + 1
         return dur_counts
 
+    # Maps states to a 1D index for use with the matrix
     def state_to_idx(state):
         var pitch = state[0]
         var dur = state[1]
@@ -87,17 +95,21 @@ class TransitionMatrix:
             return -1
         return i * len(durs) + j
 
+    # Maps a 1D index to state it represents
     def idx_to_state(idx):
         var pitch = int(idx / len(durs))
         var dur = durs[idx % len(durs)]
         return [pitch, dur]
 
+    # Checks if states with given pitch can transition to anything else
     def pitch_can_transition(pitch):
         for dur in durs:
             if sum_row(mat[state_to_idx([pitch, dur])]) > 0:
                 return true
         return false
 
+    # Creates the transition matrix from a MIDI track,
+    # which is an array of Alg_note objects
     def learn(track, optional key_pitch = 0):
         var dur_freqs = dur_frequencies(track, true)
         durs = dur_freqs.keys().sort('num_increasing')
@@ -123,6 +135,7 @@ class TransitionMatrix:
 
         return normalize(result_mat)
 
+    # Combines current transition matrix with another with given weight
     def combine(other_tm, optional other_weight = 0.5):
         var new_tm = TransitionMatrix()
 
@@ -174,20 +187,17 @@ class TransitionMatrix:
                         else:
                             new_tm.mat[ntm_from][ntm_to] = 0
 
-        # print "Before normalize:"
-        # for row in new_tm.mat
-        #     print sum_row(row)
+        # Ensure matrix is normalized
         new_tm.mat = new_tm.normalize(new_tm.mat)
-        # print "After normalize:"
-        # for row in new_tm.mat
-        #     print sum_row(row)
 
         return new_tm
 
+    # Convert one row of the matrix into a string representing a CSV row
     def serialize_row(row):
         joined = flatten([str(x) + "," for x in row])
         return subseq(joined, 0, len(joined) - 1)
 
+    # Write the transition matrix into an actual CSV file
     def write(filename):
         # Write to CSV, column names are states
         var out_file = open(filename, "w")
@@ -200,6 +210,7 @@ class TransitionMatrix:
         out_file.flush()
         out_file.close()
 
+    # Loads a transition matrix from an actual CSV file
     def read(filename):
         # Read from CSV, column names are states
         var temp_data = readcsv(filename, false, true)

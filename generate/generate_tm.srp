@@ -8,14 +8,14 @@ def warning(msg)
 
 # print the notes in seq
 def show_note(note)
-    print "time: "; note.time; " chan: "; note.chan; 
+    print "time: "; note.time; " chan: "; note.chan;
     print " keyno: "; note.key; " vel: "; note.loud
 
 def track_num_notes(track):
     return len([note for note in track if isinstance(note, Alg_note)])
 
 def main():
-    var midi_file_path = wxs_file_selector("Open a Standard MIDI File", 
+    var midi_file_path = wxs_file_selector("Open a Standard MIDI File",
                              "", "", ".mid", "*.mid", WXS_FILE_OPEN, 0)
     print "Opening", midi_file_path
     seq = allegro_smf_read(midi_file_path)
@@ -25,8 +25,8 @@ def main():
 
     # convert seq times to beats
     seq.convert_to_beats()
-    # seq.convert_to_seconds()
 
+    # Display how many notes each track has
     print "Which track to learn from?"
     for track at tr in seq.tracks:
         if track_num_notes(track) > 0:
@@ -41,15 +41,11 @@ def main():
 
     tm = TransitionMatrix(seq.tracks[target_tr])
     print "TRACK", target_tr
-    print tm.durs
-    # print tm.mat
+
     print "Wrote to " + output + ".csv"
     tm.write(output + ".csv")
-    tm2 = TransitionMatrix()
-    tm2.read(output + ".csv")
-    print tm2.durs
+
     print "Done!"
-    # print tm2.mat
     exit()
 
 main()

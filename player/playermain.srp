@@ -2,8 +2,8 @@
 
 # DESIGN:
 # This is the main base of the code that handles the playing.
-# It takes in 3 songs of different genres as .mid files (hardcoded) and mixes them to generate Markov matrices.
-# All of the manual control is handled here as well with touchOSC. 
+# It uses 3 previously generated transition matrices (serialized as CSVs) to provide options for mixing matrices.
+# All of the manual control is handled here as well with TouchOSC.
 # The actual playing code is mostly done in the play_a_measure function.
 # This code is based off of RBD's playerdemo.srp.
 
@@ -26,13 +26,18 @@ require "prob"
 require "mfread"
 require "../transition_matrix"
 
+# Filenames are encoded here for faster launching during performance
+TM_FILES = ["tetris.csv", "usanthem.csv", "anotherlovesong.csv"]
+
+# Associated names of transition matrices
+TM_NAMES = ["Game", "Classical", "Rock"]
+
 val1 = -1 # val1 and val2 are used to determine which songs to mix into the matrix, ranging from 0 to 2.
 val2 = -1
 weight1 = 0.5 # float ranging from 0 to 1. gray slider in the bottom middle.
-weight2 = 1 - weight1
 octaveshift = 4 # this is an int ranging from 0 to 9 determined by the touchosc slider. Left slider in the middle 4
-drag_factor = 1.5
-vol_sd = 15 # for selecting volume
+drag_factor = 1.5 # this is a float ranging from 1.0 to 2.0 to determine how much to multiply note durations by
+vol_sd = 15 # for selecting standard deviation in volume, which is normally distributed with mean 100 (except downbeats)
 instrument = 4 # for selecting instrument
 
 ///////////////////////////////////
@@ -100,7 +105,8 @@ def button6(timestamp, address, types, val)
     print val2
 
 def weightslider(timestamp, address, types, val)
-    if(val < 0.01) # used to fix the issue of breaking at 0 and 1. 
+    # Clamp values to avoid potential problems with extreme values
+    if(val < 0.01)
         val = 0.01
     if(val > 0.99)
         val = 0.99
@@ -124,7 +130,7 @@ def button7(timestamp, address, types, val) # Electric piano 1
     instrument = 4
 def button8(timestamp, address, types, val) # Voice Oohs
     instrument = 53
-def button9(timestamp, address, types, val) # blow bottle
+def button9(timestamp, address, types, val) # blow bottle/dog barking
     instrument = 76
 
 install_handlers()
@@ -135,12 +141,6 @@ if rslt != 0 // an error occurred
 ///////////////////////////////////////////////////////////////////
 // Markov Stuff
 ///////////////////////////////////////////////////////////////////
-
-# Filenames are encoded here for faster launching during performance
-TM_FILES = ["tetris.csv", "usanthem.csv", "anotherlovesong.csv"]
-
-# Associated names of transition matrices
-TM_NAMES = ["Game", "Classical", "Rock"]
 
 # Populated with actual transition matrices
 TM_LIST = []
@@ -242,9 +242,11 @@ def play_a_measure()
         prev_dur = pick_starting_dur(tm, prev_pitch)
         var to_be_played = []
 
+        # Set instrument
         sched_cause(0, midi_out, 'program',
                     0, instrument)
 
+        # Generate enough beats for the measure
         while total_beats < cur_beats_per_measure and tries < max_tries:
             var next_state = get_next_state(tm, [prev_pitch, prev_dur])
             var next_pitch = next_state[0]
@@ -263,6 +265,7 @@ def play_a_measure()
 
                 # Make sure the first note is always at velocity 100
                 var actual_vol = 100
+
                 # Notes not on a downbeat
                 if total_beats - int(total_beats) > eps:
                     actual_vol = int(pr_normal(100, vol_sd))
@@ -271,8 +274,10 @@ def play_a_measure()
                 total_beats = total_beats + next_dur
                 tries = 0
                 to_be_played.append([PITCH_MAP[next_pitch], next_dur, actual_vol])
+
             else:
                 tries = tries + 1
+
             prev_pitch = next_pitch
             prev_dur = next_dur
 
