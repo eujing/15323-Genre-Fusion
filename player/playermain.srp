@@ -127,11 +127,11 @@ rslt = o2_osc_port_new(SERVICE, PORT, false)
 if rslt != 0 // an error occurred
     display "in int.srp, o2_osc_port_new returned ERROR", rslt
 
-
 ///////////////////////////////////////////////////////////////////
 // Markov Stuff
 ///////////////////////////////////////////////////////////////////
 
+# Filenames are encoded here for faster launching during performance
 TM_FILES = ["tetris.csv", "usanthem.csv", "anotherlovesong.csv"]
 
 # Associated names of transition matrices
@@ -140,10 +140,10 @@ TM_NAMES = ["Game", "Classical", "Rock"]
 # Populated with actual transition matrices
 TM_LIST = []
 
+PITCH_MAP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
 # Loading of precomputed transition matrices
 for i = 0 to len(TM_NAMES):
-    # var tm_file_path = wxs_file_selector("Open a Transition Matrix for " + type_name,
-    #                          "", "", ".csv", "*.csv", WXS_FILE_OPEN, 0)
     var tm_file_path = TM_FILES[i]
     var tmp_tm = TransitionMatrix()
     tmp_tm.read(tm_file_path)
@@ -200,8 +200,6 @@ def pick_starting_pitch(tm, cur_scale):
             pitches.append(pitch)
     return pr_choice(pitches)
 
-PITCH_MAP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-
 def play_a_measure()
     # compute a measure using these variables:
     #    cur_style - a symbol representing style to play (if
@@ -221,9 +219,7 @@ def play_a_measure()
     #
     display "play_a_measure", cur_beats_per_measure, cur_bps
     display "    ", cur_scale, cur_chord, cur_bass
-    # Use EPSILON here because comparing floats for equality is not
-    #   reliable without very difficult analysis. So, instead of
-    #   x >= y, we write x + EPSILON > y
+
     if cur_style == 'rock'
 
         var total_beats = 0
@@ -236,8 +232,6 @@ def play_a_measure()
 
         # Continue the rest of the measure with the Markov chain, only
         # playing notes within the scale
-        # prev_dur = 0.25
-
         var tm = get_current_tm()
         prev_pitch = pick_starting_pitch(tm, cur_scale)
         prev_dur = pick_starting_dur(tm, prev_pitch)
@@ -252,7 +246,7 @@ def play_a_measure()
             var next_dur = next_state[1]
 
             sched_select(vtsched)
-            # TODO: Find out why this happens, I think it does not happen anymore
+
             if prev_pitch == 0 and prev_dur == 0 and
                next_pitch == 0 and next_pitch == 0:
                 print "Stuck in inf sequence of 0 duration notes, break"
